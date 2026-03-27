@@ -31,7 +31,7 @@
     <header class="h-14 bg-black border-b border-[#333] flex items-center justify-between px-6 shrink-0">
         <div class="flex items-center gap-3">
             <i class="fa-solid fa-terminal text-[#B32A19]"></i>
-            <span class="font-bold text-lg tracking-widest text-white">ADMIN_CONSOLE_V4</span>
+            <span class="font-bold text-lg tracking-widest text-white">ADMIN_CONSOLE</span>
         </div>
         <button onclick="window.open('projection.html', 'Projection', 'width=1280,height=720')" class="bg-[#B32A19] text-xs px-4 py-2 font-bold uppercase hover:bg-red-700 transition">
             Launch Projection Window <i class="fa-solid fa-arrow-up-right-from-square ml-2"></i>
@@ -48,11 +48,65 @@
 
         <main class="flex-1 bg-[#111] p-8 overflow-y-auto">
             
-            <!-- TAB: MASTER DASHBOARD -->
+            <!-- TAB MASTER DASHBOARD -->
             <div id="content-dashboard" class="content-tab space-y-8">
-                <h2 class="text-2xl font-bold border-b border-[#333] pb-4 text-[#B32A19]">Master Dashboard</h2>
-                <div class="grid grid-cols-4 gap-4" id="dashboard-stats">
-                    <div class="text-gray-500 text-xs">Loading stats...</div>
+            <h2 class="text-2xl font-bold border-b border-333 pb-4 text-B32A19">Master Dashboard</h2>
+            
+                <!-- Arrival Status / ETA -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-1a1a1a border border-333 p-6">
+                    <p class="text-10px uppercase text-gray-500 mb-4 tracking-widest">Arrival Status</p>
+                    <div id="arrival-stats" class="space-y-3">
+                        <div class="flex justify-between">
+                        <span class="text-gray-400">Arrived</span>
+                        <span id="arrived-count" class="font-bold text-2xl text-green-400">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                        <span class="text-gray-400">On Way</span>
+                        <span id="onway-count" class="font-bold text-2xl text-blue-400">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                        <span class="text-gray-400">Pending</span>
+                        <span id="pending-count" class="font-bold text-2xl text-yellow-400">0</span>
+                        </div>
+                    </div>
+                    </div>
+                    
+                    <!-- ETA Breakdown -->
+                    <div class="bg-1a1a1a border border-333 p-6">
+                    <p class="text-10px uppercase text-gray-500 mb-4 tracking-widest">ETA Timeline</p>
+                    <div id="eta-timeline" class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span>T+0</span><span id="eta-t0" class="text-blue-400">0</span></div>
+                        <div class="flex justify-between"><span>T+1</span><span id="eta-t1" class="text-blue-400">0</span></div>
+                        <div class="flex justify-between"><span>T+2</span><span id="eta-t2" class="text-blue-400">0</span></div>
+                        <div class="flex justify-between"><span>T+3</span><span id="eta-t3" class="text-blue-400">0</span></div>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- Guests by Squad + Squad Dashboard -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-1a1a1a border border-333 p-6">
+                    <p class="text-10px uppercase text-gray-500 mb-4 tracking-widest">Guests by Squad</p>
+                    <div id="squad-breakdown" class="space-y-2">
+                        <!-- Populated by JS -->
+                    </div>
+                    </div>
+                    
+                    <div class="bg-1a1a1a border border-333 p-6">
+                    <p class="text-10px uppercase text-gray-500 mb-4 tracking-widest">Squad Scores</p>
+                    <div id="squad-scores" class="space-y-2">
+                        <!-- Populated by JS -->
+                    </div>
+                    </div>
+                </div>
+
+                <!-- Live Event Rundown -->
+                <div class="bg-black border-2 border-B32A19 p-6">
+                    <p class="text-10px uppercase text-gray-400 mb-4 tracking-widest">Live Event Rundown</p>
+                    <div id="event-rundown" class="space-y-2 text-xs font-mono text-gray-300">
+                    <!-- Populated by JS from Google Sheets or static -->
+                    </div>
                 </div>
             </div>
 
@@ -109,6 +163,7 @@
         </main>
     </div>
 
+    <script src="console.js"></script>
     <script src="projection.js"></script>
 </body>
 </html>

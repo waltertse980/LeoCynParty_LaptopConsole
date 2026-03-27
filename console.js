@@ -13,10 +13,47 @@ function switchTab(tabId) {
     if (tabId === 'database') loadTableData();
 }
 
-// DASHBOARD LOGIC
+// MASTER DASHBOARD
+async function loadMasterDashboard() {
+    // Arrival Status
+    const { data: status } = await db.from('status').select('*');
+    const arrived = status.filter(s => s.checkintime).length;
+    const onway = status.filter(s => !s.checkintime && s.etahours).length;
+    const pending = status.length - arrived - onway;
+    
+    document.getElementById('arrived-count').textContent = arrived;
+    document.getElementById('onway-count').textContent = onway;
+    document.getElementById('pending-count').textContent = pending;
+
+    // Squad breakdown + scores (from game table)
+    const { data: games } = await db.from('game').select('squadname, drinkslot');
+    document.getElementById('squad-breakdown').innerHTML = 
+        games.map(g => `<div class="flex justify-between"><span>${g.squadname}</span><span class="font-bold">${g.drinkslot}</span></div>`).join('');
+
+    document.getElementById('squad-scores').innerHTML = 
+        games.map(g => `<div class="flex justify-between"><span>${g.squadname}</span><span class="text-green-400 font-bold">${g.drinkslot}</span></div>`).join('');
+
+    // ETA timeline (simplified)
+    for (let i = 0; i <= 3; i++) {
+        const count = status.filter(s => s.etahours === i).length;
+        document.getElementById(`eta-t${i}`).textContent = count;
+    }
+
+    // Event rundown (static for now)
+    document.getElementById('event-rundown').innerHTML = `
+        <div>20:00 - Welcome Drinks</div>
+        <div>20:30 - Raise Glasses</div>
+        <div>21:00 - Wheel of Fortune</div>
+        <div>21:30 - Memory Lane</div>
+    `;
+}
+
+// Call on boot
+loadMasterDashboard();
+
 async function loadDashboard() {
-    const { count: checkins } = await db.from('status').select('*', { count: 'exact', head: true }).not('checkintime', 'is', null);
-    const { count: ubers } = await db.from('status').select('*', { count: 'exact', head: true }).eq('ubermatch', 'TRUE');
+    const { count: checkins } = await db.from('status').select('*', { count: 'exact', head: true }).not('checkin_time', 'is', null);
+    const { count: ubers } = await db.from('status').select('*', { count: 'exact', head: true }).eq('uber_match', 'TRUE');
     
     document.getElementById('dashboard-stats').innerHTML = `
         <div class="bg-[#1a1a1a] border border-[#333] p-4">
@@ -36,7 +73,7 @@ let dbSubscription = null;
 
 const primaryKeys = {
     'profile': 'uid', 'status': 'uid', 'survey': 'uid', 'reception': 'uid', 'push_subscriptions': 'uid',
-    'game': 'squadname', 'blessing': 'id'
+    'game': 'squad_name', 'blessing': 'id'
 };
 
 document.getElementById('db-table-select').addEventListener('change', (e) => {
@@ -98,35 +135,48 @@ function setProjectionMode(mode) {
 }
 
 async function triggerWheelSpin() {
-    // 1. Fetch game table to resolve slots
-    const { data: games } = await db.from('game').select('squadname, drink_slot, squadcolour').gt('drink_slot', 0);
-    if (!games || games.length === 0) return alert("No valid drink slots found in game table.");
+    // Live fetch from game table
+    const { data: games } = await db
+        .from('game')
+        .select('squad_name, drink_slot, squad_colour')
+        .gt('drink_slot', 0);
+    
+    if (!games || games.length === 0) {
+        alert('No valid drink slots found in game table.');
+        return;
+    }
 
-    // 2. Build flattened array of slots based on drink_slot value
+    // Build slots array from drink_slot values
     let slots = [];
     games.forEach(g => {
-        for(let i=0; i < g.drink_slot; i++) slots.push(g);
+        for (let i = 0; i < g.drink_slot; i++) {
+            slots.push(g);
+        }
     });
 
-    // 3. Pick random winner index
     const winnerIndex = Math.floor(Math.random() * slots.length);
     const winner = slots[winnerIndex];
 
-    // 4. Fetch team members to show in modal
-    const { data: members } = await db.from('profile').select('givenname').eq('squadname', winner.squadname);
-    const memberNames = members ? members.map(m => m.givenname).join(', ') : '';
+    // Get squad members
+    const { data: members } = await db
+        .from('profile')
+        .select('givenname')
+        .eq('squad_name', winner.squad_name);
 
-    // 5. Send data to Projection Window to trigger animation
+    const memberNames = members?.map(m => m.givenname).join(', ') || '';
+
+    // Broadcast to projection window
     projChannel.postMessage({
         action: 'spin_wheel',
-        slots: slots,
-        winnerIndex: winnerIndex,
-        winnerName: winner.squadname,
-        winnerColor: winner.squadcolour,
+        slots,
+        winnerIndex,
+        winnerName: winner.squad_name,
+        winnerColor: winner.squad_colour,
         membersText: memberNames
     });
 
-    document.getElementById('latest-spin-result').innerText = `Spinning... Expected Winner: ${winner.squadname}`;
+    document.getElementById('latest-spin-result').innerText = 
+        `Spinning... Expected: ${winner.squad_name}`;
 }
 
 // Boot

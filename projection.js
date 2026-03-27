@@ -8,9 +8,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const projChannel = new BroadcastChannel('terracotta_proj');
 
-// Helper: Build public URL from bucket name and filename
+// Helper: Build public URL safely using Supabase SDK
 function storageUrl(bucket, filename) {
-    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${filename}`;
+    const { data } = db.storage.from(bucket).getPublicUrl(filename);
+    return data.publicUrl;
 }
 
 // ============================================================
@@ -145,14 +146,13 @@ function pickRandomFrom(pool) {
 }
 
 function getScreenQuadrant(loopId) {
-    // Each loop gets a dedicated screen quadrant to prevent overlap
-    const quadrants = {
-        'A': { xMin: 0,  xMax: 50, yMin: 0,  yMax: 50 },  // Top-left
-        'B': { xMin: 50, xMax: 100, yMin: 0,  yMax: 50 }, // Top-right
-        'C': { xMin: 0,  xMax: 50, yMin: 50, yMax: 100 }, // Bottom-left
-        'D': { xMin: 50, xMax: 100, yMin: 50, yMax: 100 } // Bottom-right
-    };
-    return quadrants[loopId];
+    const buffer = 8; // 8% buffer from edges
+    return {
+        'A': { xMin: buffer, xMax: 50-buffer, yMin: buffer, yMax: 50-buffer }, // Top-left
+        'B': { xMin: 50+buffer, xMax: 100-buffer, yMin: buffer, yMax: 50-buffer }, // Top-right
+        'C': { xMin: buffer, xMax: 50-buffer, yMin: 50+buffer, yMax: 100-buffer }, // Bottom-left
+        'D': { xMin: 50+buffer, xMax: 100-buffer, yMin: 50+buffer, yMax: 100-buffer } // Bottom-right
+    }[loopId];
 }
 
 function handleImageLoop(loopId, state) {
@@ -245,6 +245,15 @@ function startMemoryLaneTick() {
     tick3(); // fire immediately
     setInterval(tick3, 3000);
 }
+
+// Double-click anywhere to toggle fullscreen
+document.addEventListener('dblclick', () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.warn(err));
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+    }
+});
 
 // Boot memory lane on load
 initMemoryLane();
