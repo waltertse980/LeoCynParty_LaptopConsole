@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projection Output</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        body { font-family: 'Space Mono', monospace; margin: 0; overflow: hidden; background: black; }
+        
+        /* Memory Lane Backdrop */
+        #memory-lane { background-color: #FFF9E5; position: absolute; inset: 0; transition: opacity 1s; }
+        .ml-image { position: absolute; background-size: cover; background-position: center; border: 8px solid white; box-shadow: 10px 10px 0px rgba(0,0,0,0.2); transition: opacity 3s ease-in-out; opacity: 0; }
+
+        /* Wheel of Fortune */
+        #wheel-view { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transition: opacity 1s; background-color: #111; }
+        .wheel-container { position: relative; width: 80vh; height: 80vh; border-radius: 50%; border: 10px solid #FFF9E5; box-shadow: 0 0 40px rgba(0,0,0,0.5); overflow: hidden; }
+        #wheel { width: 100%; height: 100%; border-radius: 50%; transition: transform 6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .pointer { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #B32A19; z-index: 10; }
+
+        /* Modal */
+        #winner-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 50; }
+        .modal-content { border: 8px solid black; padding: 40px; text-align: center; max-width: 800px; transform: rotate(-2deg); box-shadow: 15px 15px 0 rgba(0,0,0,1); }
+    </style>
+</head>
+<body>
+
+    <!-- MEMORY LANE (Default) -->
+    <div id="memory-lane">
+        <!-- 4 Separate quadrants to guarantee no overlap -->
+        <div id="ml-A" class="ml-image"></div>
+        <div id="ml-B" class="ml-image"></div>
+        <div id="ml-C" class="ml-image"></div>
+        <div id="ml-D" class="ml-image"></div>
+    </div>
+
+    <!-- WHEEL OF FORTUNE -->
+    <div id="wheel-view" style="opacity: 0; pointer-events: none;">
+        <div class="wheel-container">
+            <div id="wheel"></div>
+            <div class="pointer"></div>
+        </div>
+    </div>
+
+    <!-- WINNER MODAL -->
+    <div id="winner-modal">
+        <div class="modal-content" id="winner-box">
+            <h2 class="text-2xl uppercase tracking-widest mb-2 font-bold text-black border-b-4 border-black pb-2 bg-white inline-block px-4">Selected Squad</h2>
+            <h1 id="winner-squad-name" class="text-8xl font-black text-white mt-6 mb-8 drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">SQUAD NAME</h1>
+            <p id="winner-members" class="text-2xl font-bold bg-black text-white p-4"></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="projection.js"></script>
+</body>
+</html>
