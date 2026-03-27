@@ -27,54 +27,55 @@ projChannel.onmessage = (event) => {
         wheelView.style.opacity = data.mode === 'wheel' ? '1' : '0';
         wheelView.style.pointerEvents = data.mode === 'wheel' ? 'auto' : 'none';
         document.getElementById('winner-modal').style.display = 'none';
-    }
-    else if (data.action === 'spin_wheel') {
+    } else if (data.action === 'spin_wheel') {
         executeSpin(data.slots, data.winnerIndex, data.winnerName, data.winnerColor, data.membersText);
     }
 };
+
+function executeSpin(slots, winnerIndex, winnerName, winnerColor, membersText) {
+    const wheel = document.getElementById('wheel');
+    const total = slots.length;
+    if (!wheel || total === 0) return;
+
+    // Build conic gradient
+    const anglePerSlot = 360 / total;
+    const gradientStops = slots.map((slot, i) => {
+        let color = slot.squad_colour || '#888888';
+        if (!color.startsWith('#')) color = '#' + color;
+        const start = i * anglePerSlot;
+        const end = (i + 1) * anglePerSlot;
+        return `${color} ${start}deg ${end}deg`;
+    });
+
+    // Apply gradient FIRST before any transition
+    wheel.style.transition = 'none';
+    wheel.style.transform = 'rotate(0deg)';
+    wheel.style.background = `conic-gradient(${gradientStops.join(', ')})`;
+
+    // Force browser repaint, then spin
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            const slotMid = (winnerIndex * anglePerSlot) + (anglePerSlot / 2);
+            const finalRotation = (360 * 8) + (360 - slotMid);
+            wheel.style.transition = 'transform 6s cubic-bezier(0.23, 1, 0.32, 1)';
+            wheel.style.transform = `rotate(${finalRotation}deg)`;
+
+            setTimeout(() => {
+                let bg = winnerColor || '#B32A19';
+                if (!bg.startsWith('#')) bg = '#' + bg;
+                document.getElementById('winner-box').style.backgroundColor = bg;
+                document.getElementById('winner-squad-name').innerText = winnerName;
+                document.getElementById('winner-members').innerText = membersText;
+                document.getElementById('winner-modal').style.display = 'flex';
+            }, 6500);
+        });
+    });
+}
 
 
 // ============================================================
 // 2. WHEEL OF FORTUNE
 // ============================================================
-function executeSpin(slots, winnerIndex, winnerName, winnerColor, membersText) {
-    const wheel = document.getElementById('wheel');
-    const total = slots.length;
-
-    // Build conic-gradient from squad colour slots
-    let gradientStops = [];
-    const anglePerSlot = 360 / total;
-    for (let i = 0; i < total; i++) {
-        let color = slots[i].squadcolour || '#888888';
-        if (!color.startsWith('#')) color = '#' + color;
-        const start = i * anglePerSlot;
-        const end = (i + 1) * anglePerSlot;
-        gradientStops.push(`${color} ${start}deg ${end}deg`);
-    }
-    wheel.style.background = `conic-gradient(${gradientStops.join(', ')})`;
-
-    // Reset, then spin
-    wheel.style.transition = 'none';
-    wheel.style.transform = 'rotate(0deg)';
-
-    setTimeout(() => {
-        const slotMid = (winnerIndex * anglePerSlot) + (anglePerSlot / 2);
-        const finalRotation = (360 * 8) + (360 - slotMid);
-        wheel.style.transition = 'transform 6s cubic-bezier(0.2, 0.8, 0.2, 1)';
-        wheel.style.transform = `rotate(${finalRotation}deg)`;
-
-        // Show winner modal after spin
-        setTimeout(() => {
-            let bg = winnerColor || '#B32A19';
-            if (!bg.startsWith('#')) bg = '#' + bg;
-            const box = document.getElementById('winner-box');
-            box.style.backgroundColor = bg;
-            document.getElementById('winner-squad-name').innerText = winnerName;
-            document.getElementById('winner-members').innerText = membersText;
-            document.getElementById('winner-modal').style.display = 'flex';
-        }, 6500);
-    }, 50);
-}
 
 
 // ============================================================
@@ -185,6 +186,10 @@ function handleImageLoop(loopId, state) {
         if (pool.length === 0) { el.style.opacity = '0'; return; }
 
         const selected = pickRandomFrom(pool);
+        const isCover = (loopId === 'D' && loopState.D.dSource === 'cover') || selected.includes('cover');
+        const baseSize = 16.6 + Math.random() * 8.4;
+        const sizeVw = isCover ? baseSize * 1.5 : baseSize; // Cover images 50% larger
+
         if (!selected) { el.style.opacity = '0'; return; }
 
         // Release old URL from active set before assigning new one
@@ -195,7 +200,6 @@ function handleImageLoop(loopId, state) {
         loopState[loopId].url = selected;
 
         // Random size: 1/6 to 1/4 of screen (16.6vw to 25vw)
-        const sizeVw = 16.6 + Math.random() * 8.4;
         const q = getScreenQuadrant(loopId);
         const xRange = q.xMax - q.xMin - sizeVw;
         const yRange = q.yMax - q.yMin - sizeVw;

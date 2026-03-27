@@ -51,23 +51,43 @@
             <!-- TAB MASTER DASHBOARD -->
             <div id="content-dashboard" class="content-tab space-y-8">
             <h2 class="text-2xl font-bold border-b border-333 pb-4 text-B32A19">Master Dashboard</h2>
-            
+                <!-- Search Bar Row -->
+                <div class="flex gap-3 items-center mb-6">
+                <select id="db-table-select" class="input-dark text-xs uppercase w-32">
+                    <option value="profile">Profile</option>
+                    <option value="status">Status</option>
+                    <option value="survey">Survey</option>
+                    <option value="game">Game</option>
+                    <option value="reception">Reception</option>
+                    <option value="blessing">Blessing</option>
+                </select>
+                <div class="relative flex-1 max-w-md">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-600 text-xs"></i>
+                    <input 
+                    type="text" 
+                    id="dashboard-search" 
+                    placeholder="Search rows..." 
+                    class="input-dark pl-9 w-full text-xs uppercase tracking-widest"
+                    >
+                </div>
+                </div>
+
                 <!-- Arrival Status / ETA -->
                 <div class="grid grid-cols-2 gap-6">
                     <div class="bg-1a1a1a border border-333 p-6">
                     <p class="text-10px uppercase text-gray-500 mb-4 tracking-widest">Arrival Status</p>
                     <div id="arrival-stats" class="space-y-3">
                         <div class="flex justify-between">
-                        <span class="text-gray-400">Arrived</span>
-                        <span id="arrived-count" class="font-bold text-2xl text-green-400">0</span>
+                            <span class="text-gray-400">Total Guests</span>
+                            <span id="total-count" class="font-bold text-2xl text-[#FFF9E5]">0</span>
                         </div>
                         <div class="flex justify-between">
-                        <span class="text-gray-400">On Way</span>
-                        <span id="onway-count" class="font-bold text-2xl text-blue-400">0</span>
+                            <span class="text-gray-400">Arrived</span>
+                            <span id="arrived-count" class="font-bold text-2xl text-green-400">0</span>
                         </div>
                         <div class="flex justify-between">
-                        <span class="text-gray-400">Pending</span>
-                        <span id="pending-count" class="font-bold text-2xl text-yellow-400">0</span>
+                            <span class="text-gray-400">On the Way</span>
+                            <span id="onway-count" class="font-bold text-2xl text-blue-400">0</span>
                         </div>
                     </div>
                     </div>

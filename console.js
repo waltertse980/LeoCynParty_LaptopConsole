@@ -15,41 +15,70 @@ function switchTab(tabId) {
 
 // MASTER DASHBOARD
 async function loadMasterDashboard() {
-    // Arrival Status
-    const { data: status } = await db.from('status').select('*');
-    const arrived = status.filter(s => s.checkintime).length;
-    const onway = status.filter(s => !s.checkintime && s.etahours).length;
-    const pending = status.length - arrived - onway;
-    
-    document.getElementById('arrived-count').textContent = arrived;
-    document.getElementById('onway-count').textContent = onway;
-    document.getElementById('pending-count').textContent = pending;
+    try {
+        // Total = only guests with givenname in profile
+        const { data: profiles = [], error: pErr } = await db
+            .from('profile')
+            .select('uid')
+            .not('givenname', 'is', null)
+            .neq('givenname', '');
 
-    // Squad breakdown + scores (from game table)
-    const { data: games } = await db.from('game').select('squadname, drinkslot');
-    document.getElementById('squad-breakdown').innerHTML = 
-        games.map(g => `<div class="flex justify-between"><span>${g.squadname}</span><span class="font-bold">${g.drinkslot}</span></div>`).join('');
+        if (pErr) console.error('Profile query error:', pErr);
+        const total = profiles.length;
 
-    document.getElementById('squad-scores').innerHTML = 
-        games.map(g => `<div class="flex justify-between"><span>${g.squadname}</span><span class="text-green-400 font-bold">${g.drinkslot}</span></div>`).join('');
+        // Arrived = status rows where checkin_time is not null
+        const { data: status = [], error: sErr } = await db
+            .from('status')
+            .select('uid');
 
-    // ETA timeline (simplified)
-    for (let i = 0; i <= 3; i++) {
-        const count = status.filter(s => s.etahours === i).length;
-        document.getElementById(`eta-t${i}`).textContent = count;
+        if (sErr) console.error('Status query error:', sErr);
+        
+        const arrived = status.filter(s => s.checkin_time).length;
+        const onway = total - arrived;
+
+        // Safe updates
+        document.getElementById('total-count').textContent = total;
+        document.getElementById('arrived-count').textContent = arrived;
+        document.getElementById('onway-count').textContent = onway;
+
+        // Squad data (safe null handling)
+        const { data: games = [], error: gErr } = await db
+            .from('game')
+            .select('squad_name, drink_slot, squad_colour');
+
+        if (gErr) console.error('Game query error:', gErr);
+
+        document.getElementById('squad-breakdown').innerHTML = 
+            games.length === 0
+            ? '<div class="text-gray-600 text-xs py-4">No squad data</div>'
+            : games.map(g => `
+                <div class="flex justify-between py-2 border-b border-333">
+                    <span>${g.squad_name}</span>
+                    <span class="font-bold">${g.drink_slot ?? 0}</span>
+                </div>`).join('');
+
+        // Rest of your code...
+        
+    } catch (err) {
+        console.error('Dashboard load failed:', err);
+        document.getElementById('dashboard-stats').innerHTML = 
+            '<div class="text-red-400 text-center py-8">Dashboard error - check console</div>';
     }
-
-    // Event rundown (static for now)
-    document.getElementById('event-rundown').innerHTML = `
-        <div>20:00 - Welcome Drinks</div>
-        <div>20:30 - Raise Glasses</div>
-        <div>21:00 - Wheel of Fortune</div>
-        <div>21:30 - Memory Lane</div>
-    `;
 }
 
 // Call on boot
+setInterval(loadMasterDashboard, 5000);
 loadMasterDashboard();
+
+// Dashboard search functionality
+document.getElementById('dashboard-search').addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    // Apply filter to all dashboard sections
+    document.querySelectorAll('[data-search]').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+    });
+});
 
 async function loadDashboard() {
     const { count: checkins } = await db.from('status').select('*', { count: 'exact', head: true }).not('checkin_time', 'is', null);
@@ -129,9 +158,15 @@ function setupRealtime() {
 
 // PROJECTION CONTROLS
 function setProjectionMode(mode) {
+    // Toggle button classes
     document.getElementById('toggle-memory-btn').classList.toggle('active-projection-btn', mode === 'memory');
     document.getElementById('toggle-wheel-btn').classList.toggle('active-projection-btn', mode === 'wheel');
-    projChannel.postMessage({ action: 'set_mode', mode: mode });
+    
+    // Send to projection window
+    projChannel.postMessage({
+        action: 'set_mode',  // ← singular, matches listener
+        mode: mode
+    });
 }
 
 async function triggerWheelSpin() {
