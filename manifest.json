@@ -1,0 +1,10 @@
+{
+  "name": "Leo&Cyn - LaptopConsole",
+  "short_name": "司令部",
+  "start_url": "./console.html",
+  "display": "standalone",
+  "background_color": "#B32A19",
+  "theme_color": "#FFF9E5",
+  "icons": ""
+}
+
